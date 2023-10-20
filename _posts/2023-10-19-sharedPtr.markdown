@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [shared_ptr]
 author: miracle
+mermaid: true
 ---
 
 * std::shared_ptr所持有的资源可以在多个std::shared_ptr之间共享，每多一个std::shared_ptr对资源的引用，资源引用计数就会+1

@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [shared_ptr, c++11]
 author: miracle
+mermaid: true
 ---
 
 std::unique_ptr脱胎于c++98/03的std::auto_ptr，用于替代std::auto_ptr。

@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [for-each]
 author: miracle
+mermaid: true
 ---
 
 for-each语法是c++引入的，可以方便进行遍历，在遍历的过程中可以自由控制按值传递或者按引用传递：
@@ -73,7 +74,7 @@ before change
 zhangsan
 lisi
 wangwu
-change to hello change to hello change to hello 
+change to hello change to hello change to hello
 after change
 
 zhangsan

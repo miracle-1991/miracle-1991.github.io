@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [emplace]
 author: miracle
+mermaid: true
 ---
 
 旧的push_back采用的是拷贝赋值的方式，会导致不必要的构造和析构， 比如：

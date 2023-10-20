@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [default]
 author: miracle
+mermaid: true
 ---
 
 default 是c++11引入的一个关键字，用于让编译器自动生成以下函数：

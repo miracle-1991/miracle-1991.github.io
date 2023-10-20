@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [map]
 author: miracle
+mermaid: true
 ---
 
 c++11中的map是STL中模板容器类型，内部使用红黑树进行实现，因此其插入、删除和查找的效率都是O(log n)。map在声明
@@ -77,7 +78,7 @@ c++中的unordered_map也是用散列表实现的，从用法和执行效率上�
 * c++中通过operator[]对不存在的键进行访问，会创建一个新的元素
 * golang中则不会
 比如:
-* c++ 
+* c++
 ```
 #include <iostream>
 #include <unordered_map>

@@ -4,7 +4,9 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [auto]
 author: miracle
+mermaid: true
 ---
+
 auto是c++11中重新定义了用法的关键字。主要用于让编译器自动推导一些复杂的类型，以简化语法。
 
 例如：
@@ -50,3 +52,5 @@ autumn : 789
 summer : 456
 spring : 123
 ```
+
+Thanks For Your Watching!

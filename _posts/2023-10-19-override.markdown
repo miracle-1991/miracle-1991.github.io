@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [RAII]
 author: miracle
+mermaid: true
 ---
 
 override是一个c++11引入的关键字，告知编译器此函数用于重写父类的同名方法，

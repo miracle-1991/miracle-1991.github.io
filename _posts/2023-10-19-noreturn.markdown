@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [AnnotationLabel]
 author: miracle
+mermaid: true
 ---
 
 [[noreturn]]是c++11新引入的注解标签，在c11中注解标签可以用来修饰类型、函数或者enum,在c17中扩展到能修饰明明空间和enum class.

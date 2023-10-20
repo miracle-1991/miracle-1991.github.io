@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [impl]
 author: miracle
+mermaid: true
 ---
 
 pimpl(Pointer to Implementation)是一种常用的封装方法，用来在对外的接口中隐藏自己的实现，一般会定义为内部类使用
@@ -42,7 +43,7 @@ public:
         return true;
     }
 private:
-    int n;  
+    int n;
 };
 
 SocketClient::SocketClient(): m_pImpl(std::make_unique<Impl>()) {}

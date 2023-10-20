@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [final]
 author: miracle
+mermaid: true
 ---
 
 final是一个c++11引入的关键字，用于修饰类，表示该类无法被继承

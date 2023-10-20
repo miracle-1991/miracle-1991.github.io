@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [initializer_list]
 author: miracle
+mermaid: true
 ---
 
 std::initializer_list<T>是c++11版本引入的模板对象，用来统一和规范c++对象初始化的方式，T可以是任意的基础数据类型

@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [AnnotationLabel]
 author: miracle
+mermaid: true
 ---
 
 [[nodiscard]]标签用于告知编译器此函数的返回值不可被使用者忽略，必须被使用，常用于：

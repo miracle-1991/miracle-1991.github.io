@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [empalce, c++17]
 author: miracle
+mermaid: true
 ---
 
 try_emplace是c++17引入的新的方法，可以检测容器中的key是否存在：

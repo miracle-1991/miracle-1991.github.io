@@ -4,9 +4,10 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [RAII]
 author: miracle
+mermaid: true
 ---
 
-资源获取就是初始化(Resource Acquisition Is Initialization): 
+资源获取就是初始化(Resource Acquisition Is Initialization):
 * 资源在我们拿到时就已经初始化
 * 一旦不需要该资源，就可以自动释放该资源
 

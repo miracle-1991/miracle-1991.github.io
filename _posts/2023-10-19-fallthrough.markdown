@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [AnnotationLabel]
 author: miracle
+mermaid: true
 ---
 
 [[fallthrough]]作为一种注解标签，明确告知编译器和开发者该case语句被贯穿

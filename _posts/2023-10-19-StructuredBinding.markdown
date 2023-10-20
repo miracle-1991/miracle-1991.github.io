@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [Binding]
 author: miracle
+mermaid: true
 ---
 
 结构化绑定是c++17引入的一种新的语法形式，可以在一次声明中引入多个变量，在使用容器、pair、tuple时能大幅简化代码。

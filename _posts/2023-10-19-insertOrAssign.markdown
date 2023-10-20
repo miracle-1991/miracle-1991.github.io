@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [map]
 author: miracle
+mermaid: true
 ---
 
 在map中，如果需要先判断是否存在，然后：

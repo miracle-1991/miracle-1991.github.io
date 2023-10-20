@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [default]
 author: miracle
+mermaid: true
 ---
 
 delete 关键字起到default关键字相反的操作，用于禁止编译器自动生成某些函数，比如，如果想让一个类不能被拷贝，可以

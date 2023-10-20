@@ -4,6 +4,7 @@ date: 2023-10-19 08:00:00 +0800
 categories: [c++]
 tags: [AnnotationLabel]
 author: miracle
+mermaid: true
 ---
 
 [[deprecated]]注解标签用于告诉使用者该函数或者该类型已经被弃用。当使用这些被弃用的函数或者类型时，编译器会告警。
