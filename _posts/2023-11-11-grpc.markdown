@@ -1,0 +1,315 @@
+---
+title: GRPC
+date: 2023-11-11 08:18:00 +0800
+categories: [backend]
+tags: [apisix, grpc]
+author: miracle
+mermaid: true
+---
+## RPC简介
+### 什么是RPC
+RPC: Remote Procedure Call的简称,即指远程过程调用。
+
+RPC向本地开发者隐藏了底层的网络通信细节，使得开发者可以像调用本地程序一样执行远端程序。
+而网络另一端的计算机会调用某个程序，返回执行结果。
+
+### RPC横向对比
+
+|RPC框架|发行者|支持语言|开发难度|
+|-----|---|----|---|
+| Dubbo | 阿里巴巴 | Java |   |
+| Motan | 微博 | Java |   |
+| Tars | 腾讯 | C++ |   |
+| SpringCloud | Pivotal | Java |   |
+| GRPC | Google |  Java、C++、Python、Golang等 | 易 |
+| Thrift | Facebook/Apache基金 |  Java、C++、Python、Golang等 | 易 |
+
+从对比图中可以看到，基本只有GRPC和Thrift支持多种语言，开发也简单。二者孰优孰劣没有定论，[Thrift vs gRPC](https://medium.com/@justinzhou.web3/thrift-vs-grpc-a-comprehensive-comparison-of-two-popular-rpc-frameworks-6d46d3a053f1#:~:text=Both%20Thrift%20and%20gRPC%20generate,codebases%20and%20slower%20compile%20times)
+对二者进行了对比。但是对我来说，grpc生成的代码量更少，开发更简单一些，基于HTTP2的传输也更快，所以会选择grpc。
+
+grpc 的高性能很大程度上依赖了 http2 的能力，所以要了解 grpc 之前，需要先了解一下 http 2 的特性。
+
+#### http2 特性
+
+
+1. 二进制协议
+
+	众所周知，二进制协议比文本形式的协议，发送的数据量肯定是更小，传输效率更高的。所以 http2 比 http/1.x 更高效，因为二进制是不可读的，所以会损失部分可读性。
+
+2. 多路复用的流
+
+   http/1.x 一个 stream 是需要一个 tcp 连接的，其实从性能上来说是比较浪费的。http2 可以复用 tcp 连接，实现一个 tcp 连接可以处理多个 stream，同时可以为每一个 stream 设置优先级，可以用来告诉对端哪个流更重要。当资源有限的时候，服务器会根据优先级来选择应该先发送哪些流
+
+3. 头部压缩
+
+   由于 http 协议是一个无状态的协议，导致了很多相同或者类似的 http 请求重复发送时，带的头部信息很多时候是完全一样的。http2 对头部进行压缩，可以减少数据包大小，提高协议性能
+
+4. 请求 reset
+
+   在 http/1.x 中，当一个含有确切值的 Content-Length 的 http 消息发出之后，需要断开 tcp 连接才能中断。这样会导致需要通过三次握手来重新建立一个新的 tcp 连接，代价是比较大的。在 http2 里面，我们可以通过发送 RST_STREAM 帧来终止当前消息发送，从而避免了浪费带宽和中断已有的连接。
+
+5. 服务器推送
+
+	如果一个 client 请求资源 A，而 server 知道 client 可能也会需要资源 B， 所以在 client 发起请求前，server 提前将 B 推送给 A 缓存起来，从而可以缩短资源 A 这个请求的响应时间。
+
+6. flow control
+
+	在 http2 中，每个 http stream 都有自己公示的流量窗口，对于每个 stream 来说，client 和 server 都必须互相告诉对方自己能够处理的窗口大小，stream 中的数据帧大小不得超过能处理的窗口值。
+
+### 为什么使用GRPC而不使用HTTP
+HTTP (超文本传输协议) 是一种基于请求-响应模型的一种无状态的交互协议，而RPC是一种主要用于分布式系统或者微服务架构中
+部署在不同物理机器上的服务可以相互进行通信的一种通信方式。
+
+二者相比较，HTTP有以下几点不足：
+- 效率: HTTP基于文本，而GRPC基于序列化的二进制，这使得GRPC更加高效
+- 灵活性：HTTP是单向的，客户端发出请求，与服务端建立连接，然后等待回应。而GRPC是双向的，本质上是基于HTTP2，客户端和服务端可以在同一条TCP连接上长时间双向通信
+- 易用性：使用HTTP，需要手动创建请求，然后执行手动序列化反序列化等操作，但是使用GRPC，这个过程可以自动化，大大简化了开发过程
+
+## GRPC服务端
+grpc 是通过 protocol buffer 来实现接口的定义的，所以在启动通信之前，需要先通过proto规定server能做什么
+### 定义PROTO
+定义[echo.proto](https://github.com/miracle-1991/apiGateWay/blob/master/server/echo/proto/echo.proto)如下：
+```
+syntax = "proto3";
+
+package echo;
+option go_package="./;echo";
+
+service GeoService {
+  rpc FillGeoHash(FillGeoHashRequest) returns (FillGeoHashResponse) {}
+}
+
+message Point {
+  double lat = 1; //顶点的纬度
+  double lon = 2; //顶点的经度
+}
+
+message Polygon {
+  repeated Point vertices = 1; //边界上的顶点
+}
+
+message MultiPolygon {
+  repeated Polygon polygons = 1; //一个边界
+}
+
+message FillGeoHashRequest {
+  string boundaryName = 1;   //区域名字
+  uint32 precision = 2;      //期望生成的geoHash的长度
+  MultiPolygon boundary = 3; //区域多个边界，第一个元素必须是外围边界，其他元素是其内部的inner hole
+}
+
+message FillGeoHashResponse {
+  repeated string geoHash = 1;
+}
+```
+在这个proto中，我定义了一个包echo, 这个包提供服务GeoService，这个服务只能处理一种远程调用FillGeoHash。该远程调用接收一个区域(由gps点组成)，然后返回该区域内的geoHash字符串.
+然后通过protoc工具将该proto转成go代码：
+```
+protoc --go_out=. --go-grpc_out=. -I . echo.proto
+```
+### 启动服务端
+在服务端中，可以不使用框架直接编写服务端，也可以使用一些成熟的框架，以便快速支持服务发现、健康检查、负载均衡、分布式追踪等功能。
+我在服务端中使用了服务框架go-kit, 因为这种框架有以下一些优点:
+1. **开发快速而有效**：Go-kit 提供一套完备的、统一的解决方案来处理常见的面向服务的架构问题，例如服务发现、负载均衡、分布式追踪、健康检查等。这使得开发者可以专注于微服务的业务逻辑，而不需要从零开始构建基础设施。
+
+2. **对抽象的优秀支持**：Go-kit 采用了微服务架构中常见的几个重要抽象，例如 Endpoint、Service 和 Transport。这些抽象帮助开发者创建出更清晰、更可维护的服务。
+
+3. **兼容性**：Go-kit 兼容服务端和客户端各种传输协议，例如 HTTP、gRPC、Thrift 等，以及各种消息队列系统。这意味着你可以根据你的架构、团队经验和其他因素选择最适合的协议。
+
+4. **社区支持**：Go-kit 是一个由社区驱动的项目，有许多活跃的贡献者。这意味着它持续得到改进和更新，同时也意味着当你遇到问题时，你可以得到社区的帮助。
+
+5. **敏捷和可扩展**：Go-kit 提供了一套最低要求的库和工具，但是它可以通过可插拔的方式使用其他库。这种灵活性使得 Go-kit 可以轻松适应项目的变化和增长。
+
+在Go-kit中，Endpoint、Service和Transport三者协同工作，对应了使用Go-kit进行微服务开发的三个主要概念：
+
+1. **Service**：Service是在业务逻辑层面的抽象，它是一个定义了一组方法的Go接口。每个方法通常对应一种业务操作。
+
+2. **Endpoint**：Endpoint是Service的一次RPC交互的抽象。每个Service的方法会被转化成一个Endpoint。Endpoint是在服务与网络传输之间的粘合层，它将Service的方法抽象为一个接受一个请求并返回一个响应的函数。这样做有两个好处，一是Service的实现被解耦出来，第三方可以自由地处理请求/响应不同的传输层协议；二是可以在Endpoint上方便地做一些方面的编程，如熔断、限流、负载均衡等。
+
+3. **Transport**：Transport则是负责在网络上发送和接收请求的层面。Go-kit支持多种网络协议，如HTTP、gRPC、Thrift等。在Transport层，将Endpoint封装成一种具体的网络协议（如HTTP或gRPC），使其他服务可以通过网络调用它。同时，Transport层也负载从网络接收调用，然后将它转化为Endpoint可以处理的形式。
+
+将微服务结构化为Service、Endpoint和Transport，有助于保持微服务的清晰性和可测试性，同时提供强大的分层抽象，使代码更易于理解和维护，增强了其健壮性。
+
+并且，这样的结构让我们可以在不更改业务逻辑的情况下，灵活地替换或对接口进行扩展，如使用不同的网络协议，添加熔断处理等。
+
+我在[service](https://github.com/miracle-1991/apiGateWay/blob/master/server/echo/server/grpcServer/service/service.go)层定义了该接口具体的实现逻辑:
+```
+type GeosService struct{}
+
+func (g *GeosService) FillGeoHash(ctx context.Context, request *echo.FillGeoHashRequest) (*echo.FillGeoHashResponse, error) {
+	boundary := request.GetBoundary()
+	if boundary == nil {
+		return nil, errors.New("Invalid Boundary")
+	}
+	geoFence := convertBoundaryToGeoFence(boundary)
+	precision := request.GetPrecision()
+	filler := hashfill.NewRecursiveFiller(hashfill.WithMaxPrecision(int(precision)))
+	hashes, err := filler.Fill(geoFence, hashfill.FillIntersects)
+	if err != nil {
+		return nil, errors.New("Fill Fail")
+	}
+	return &echo.FillGeoHashResponse{GeoHash: hashes}, nil
+}
+```
+然后启动该[服务](https://github.com/miracle-1991/apiGateWay/blob/master/server/echo/server/grpcServer/server.go)：
+```
+func StartGrpcServer() {
+	var svc service.Service
+	svc = &service.GeosService{}  // 构建service层
+
+	endPoint := endpoint.MakeEchoEndPoint(svc) //构建endpoint层
+	endPoints := endpoint.EchoEndPoints{
+		EchoEndPoint: endPoint,
+	}
+	handler := myTransPort.NewEchoServer(endPoints)  //构建transport层
+
+	address := fmt.Sprintf(":%d", config.GRPC_PORT)
+	ls, _ := net.Listen("tcp", address)
+	gRPCServer := grpc.NewServer()
+
+	healthServer := health.NewServer()
+	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+	healthpb.RegisterHealthServer(gRPCServer, healthServer) //注册健康检查handler
+	echo.RegisterGeoServiceServer(gRPCServer, handler)      //注册grpc服务handler
+	gRPCServer.Serve(ls)                                    //启动服务
+}
+```
+
+## Apisix转发HTTP请求到GRPC服务
+### 服务注册
+仅仅实现了服务还是不够的，在实际应用中，我们还需要将GRPC服务部署到节点上，并使其能够接收外部的请求。
+因此在启动服务之前，还需要将其注册到服务发现中心，方便网关通过服务发现知晓服务节点的具体IP，从而才能反向代理客户端的请求到服务节点:
+[注册过程](https://github.com/miracle-1991/apiGateWay/blob/master/server/echo/register/register.go)如下:
+
+```
+func (c *consul) RegisterService(serviceName string, ip string, httpPort, grpcPort int, tags []string) (string, string, error) {
+	// register http
+	httpServiceID := fmt.Sprintf("%s-%s-%d", serviceName, ip, httpPort)
+	httpSrv := &api.AgentServiceRegistration{
+		ID:      httpServiceID,
+		Name:    serviceName + "_http",
+		Tags:    tags,
+		Address: ip,
+		Port:    httpPort,
+		Check: &api.AgentServiceCheck{
+			HTTP:                           fmt.Sprintf("http://%s:%d/health", ip, httpPort),
+			Timeout:                        config.HEALTH_CHECK_TIMEOUT,
+			Interval:                       config.HEALTH_CHECK_INTERVAL,
+			DeregisterCriticalServiceAfter: config.DEREGISTER_CRITICAL_SERVICE_AFTER,
+		},
+	}
+	err := c.client.Agent().ServiceRegister(httpSrv)
+	if err != nil {
+		fmt.Printf("failed to register http server, error: %v", err)
+		return "", "", err
+	}
+
+	// register grpc
+	grpcServiceID := fmt.Sprintf("%s-%s-%d", serviceName, ip, grpcPort)
+	grpcSrv := &api.AgentServiceRegistration{
+		ID:      grpcServiceID,
+		Name:    serviceName + "_grpc",
+		Tags:    tags,
+		Address: ip,
+		Port:    grpcPort,
+		Check: &api.AgentServiceCheck{
+			GRPC:                           fmt.Sprintf("%s:%d", ip, grpcPort),
+			Timeout:                        config.HEALTH_CHECK_TIMEOUT,
+			Interval:                       config.HEALTH_CHECK_INTERVAL,
+			DeregisterCriticalServiceAfter: config.DEREGISTER_CRITICAL_SERVICE_AFTER,
+		},
+	}
+	err = c.client.Agent().ServiceRegister(grpcSrv)
+	if err != nil {
+		fmt.Printf("failed to register grpc server, error: %v", err)
+		return "", "", err
+	}
+	return httpServiceID, grpcServiceID, nil
+}
+```
+此处，http和grpc服务分别绑定各自的端口，然后向consul分别进行了注册，注册时二者的健康检查方式是不一样的:
+* HTTP: consul会向/health发起get请求
+* GRPC: consul会根据GRPC健康检查协议向服务发起Check调用，获知服务状态
+
+注册完成后，```docker-compose up -d```启动该服务集群，可以在[consul界面](http://127.0.0.1:8500/ui/dc1/services)上看到服务已经ready了:
+
+![consul-dashboard](/assets/img/grpc/consulDashboard.png)
+
+### Apisix Grpc Transcode
+apisix作为功能异常强大的一款分布式网关，早已通过插件[grpc-transcode](https://apisix.apache.org/docs/apisix/plugins/grpc-transcode/)支持了将客户端发来的HTTP请求转为GRPC请求,
+该插件的使用可以分成以下几个步骤：
+1. **注册Proto文件**：将服务端使用的proto文件的内容上传到apisix中，获取proto_id
+
+![uploadProtoContentIntoApisix](/assets/img/grpc/addProtoIntoApisix.png)
+
+2. **配置Upstream**：指定如何发现上游节点：
+   * 指定通过consul进行服务发现
+   * 指定要发现的服务名是echo_grpc
+   * 指定与上游的通信协议是grpc
+   * 指定负载均衡方式是roundrobin
+
+![configUpstream](/assets/img/grpc/configUpstream.png)
+
+3. **配置服务**：将某一类上游节点指定为一种服务，并为该服务配置插件grpc-translate
+   * 通过proto_id指定使用哪个proto
+   * 通过service指定使用proto中的哪个service
+   * 通过method指定使用该service中的哪个方法
+
+![configServiceAtApisix](/assets/img/grpc/configSericeInApisix.png)
+
+3. **配置路由**：当请求路径是/echogrpc时，转发到echo的grpc服务
+
+![configRoute](/assets/img/grpc/configRouteInApisix.png)
+
+
+## 实际测试
+使用postman发起如下请求：
+```
+curl --location 'http://127.0.0.1:9080/echogrpc' \
+--header 'Content-Type: application/json' \
+--data '{
+    "boundaryName": "chengdu",
+    "precision": 6,
+    "boundary": {
+        "polygons": [
+            {
+                "vertices": [
+                    {"lat": 30.725932779733828,"lon": 104.04810399201176},
+                    {"lat": 30.718933590173382,"lon": 104.10548984714013},
+                    {"lat": 30.712244330215963,"lon": 104.13622682435815},
+                    {"lat": 30.702910389863735,"lon": 104.15873257503482},
+                    {"lat": 30.66954989275946,"lon": 104.16300567773708},
+                    {"lat": 30.611560542033516,"lon": 104.14115260383586},
+                    {"lat": 30.60368261457832,"lon": 104.13460495126948},
+                    {"lat": 30.597337315209458,"lon": 104.12197165037554},
+                    {"lat": 30.594520110636584,"lon": 104.09585145457078},
+                    {"lat": 30.597848397395246,"lon": 104.08054653476084},
+                    {"lat": 30.59897710829587,"lon": 104.04449447431418},
+                    {"lat": 30.626768854130056,"lon": 104.0006597543566},
+                    {"lat": 30.652212454847685,"lon": 103.98381719828197},
+                    {"lat": 30.67412880125752,"lon": 103.99050661667191},
+                    {"lat": 30.701291076077624,"lon": 104.00698694578595},
+                    {"lat": 30.70704013040491,"lon": 104.02065715840023}
+                ]
+            }
+        ]
+    }
+}'
+```
+将获得结果：
+```
+{
+    "geoHash": [
+        "wm3ynv",
+        "wm3ynw",
+        ... //数据太多，此处省略
+    ]
+}
+```
+
+It works ! 現実ってすごいですね !
+
+然后在[https://bhargavchippada.github.io/mapviz](https://bhargavchippada.github.io/mapviz/#)上粘贴这些geoHash字符串，就能看到如下效果:
+
+![成都geohash](/assets/img/grpc/geoHash.png)
+
