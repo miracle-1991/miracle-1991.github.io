@@ -2,7 +2,7 @@
 title: GRPC
 date: 2023-11-11 08:18:00 +0800
 categories: [grpc]
-tags: [apisix, grpc]
+tags: [apisix, grpc, golang]
 author: miracle
 mermaid: true
 ---
@@ -16,14 +16,22 @@ RPC向本地开发者隐藏了底层的网络通信细节，使得开发者可�
 
 ### RPC横向对比
 
-|RPC框架|发行者|支持语言|开发难度|
-|-----|---|----|---|
-| Dubbo | 阿里巴巴 | Java |   |
-| Motan | 微博 | Java |   |
-| Tars | 腾讯 | C++ |   |
-| SpringCloud | Pivotal | Java |   |
-| GRPC | Google |  Java、C++、Python、Golang等 | 易 |
-| Thrift | Facebook/Apache基金 |  Java、C++、Python、Golang等 | 易 |
+[//]: # ()
+[//]: # (|RPC框架|发行者|支持语言|开发难度|)
+
+[//]: # (|-----|---|----|---|)
+
+[//]: # (| Dubbo | 阿里巴巴 | Java |   |)
+
+[//]: # (| Motan | 微博 | Java |   |)
+
+[//]: # (| Tars | 腾讯 | C++ |   |)
+
+[//]: # (| SpringCloud | Pivotal | Java |   |)
+
+[//]: # (| GRPC | Google |  Java、C++、Python、Golang等 | 易 |)
+
+[//]: # (| Thrift | Facebook/Apache基金 |  Java、C++、Python、Golang等 | 易 |)
 
 从对比图中可以看到，基本只有GRPC和Thrift支持多种语言，开发也简单。二者孰优孰劣没有定论，[Thrift vs gRPC](https://medium.com/@justinzhou.web3/thrift-vs-grpc-a-comprehensive-comparison-of-two-popular-rpc-frameworks-6d46d3a053f1#:~:text=Both%20Thrift%20and%20gRPC%20generate,codebases%20and%20slower%20compile%20times)
 对二者进行了对比。但是对我来说，grpc生成的代码量更少，开发更简单一些，基于HTTP2的传输也更快，所以会选择grpc。
