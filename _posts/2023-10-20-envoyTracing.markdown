@@ -33,7 +33,9 @@ Jaeger也是支持Opentracing标准的项目之一。
 ##### Golang Jaeger Example:
 本项目使用golang实现了一个tracing的example，并将tracing信息上报到jaeger: [go-tracing](https://github.com/miracle-1991/envoy-study/tree/main/tracing/go-tracing)
 上报过程如下:
+
 ![tracing上报到jaeger](/assets/img/envoy/tracing/jaeger-architecture.png)
+
 其中的组件如下:
 * Client: Jager客户端，是OpenTracing API的具体语言实现；
 * Agent: 监听在UDP端口的守护进程，用于接受Client发送的追踪数据，并将数据批量发送给Collector；
@@ -56,7 +58,9 @@ docker-compose up --build -d
 curl -v http://localhost:8000/trace/1
 ```
 该demo的运行过程如下所示:
+
 ![example-jaeger-tracing](/assets/img/envoy/tracing/envoy-example-jaeger-tracing.png)
+
 * front:接受curl请求，并向service1发起http请求
 * service1: 转发http请求，转发过程中透传各种header
 * service2: 接收http请求，并做出反应
@@ -67,9 +71,13 @@ example代码位置[grpc envoy tracing](https://github.com/miracle-1991/envoy-st
 
 ### envoy内部tracing过程
 在envoy内部，tracing的主要过程如下:
+
 ![envoy的请求处理过程](/assets/img/envoy/tracing/filter-work.png)
+
 envoy的内部处理过程：
+
 ![tracing内部过程](/assets/img/envoy/tracing/tracing_internal_process.png)
+
 * Listener Filter:侦听器过滤器(tls)
 * Connection:建立连接
 * TCP Filter Manager: TCP管理器，管理L4过滤器（读取原始套接字），分为read/write filters
@@ -85,7 +93,9 @@ http conn manager使用tracing:
   * [completeRequest中调用finalizeDownstreamSpan，finalizeDownstreamSpan进而调用finishSpan](https://github.com/envoyproxy/envoy/blob/main/source/common/tracing/http_tracer_impl.cc)
 
 startSpan、finishSpan、injectContext等主要接口定义在[envoy/envoy/tracing](https://github.com/envoyproxy/envoy/tree/main/envoy/tracing)中
-。envoy/tracing定义了tracing组件需要实现的接口，这些接口都是纯虚接口:![envoy/envoy/tracing interface definition](/assets/img/envoy/tracing/envoy-tracing-functions.png)
+。envoy/tracing定义了tracing组件需要实现的接口，这些接口都是纯虚接口:
+
+![envoy/envoy/tracing interface definition](/assets/img/envoy/tracing/envoy-tracing-functions.png)
 
 主要的接口说明:
 * [startSpan](https://github.com/envoyproxy/envoy/tree/main/envoy/tracing/trace_driver.h)：创建一个新的spanContext，可以是rootSpan或者childSpan
@@ -98,12 +108,15 @@ startSpan、finishSpan、injectContext等主要接口定义在[envoy/envoy/traci
 
 
 [envoy/tracing]((https://github.com/envoyproxy/envoy/tree/main/envoy/tracing)主要提供接口定义，具体的实现位于source目录中。空实现以及扩展实现如下图所示:
+
 ![tracing的空实现以及扩展实现](/assets/img/envoy/tracing/tracing-null-impl.png)
 
 
 * [envoy/source/common/tracing](https://github.com/envoyproxy/envoy/tree/main/source/common/tracing)：提供了空实现，并管理扩展实现
   * [custom_tag_lib](https://github.com/envoyproxy/envoy/blob/main/source/common/tracing/custom_tag_impl.h): 主要定义了如何读取标签值并将标签设置到span中
+
 ![读取的各种实现](/assets/img/envoy/tracing/common-tracing-custom_tag_lib.png)
+
   * [http_tracer_manager_lib](https://github.com/envoyproxy/envoy/blob/main/source/common/tracing/tracer_manager_impl.h): 管理http_tracer，使用hash map保存了config与tracer的对应关系，向外提供获取tracer的接口
   * [http_tracer_lib](https://github.com/envoyproxy/envoy/blob/main/source/common/tracing/tracer_impl.h): 主要定义了三部分
     * HttpTracerUtility: 全部是静态函数，路由时结束时可以被调用，上报tracing log
@@ -120,6 +133,7 @@ startSpan、finishSpan、injectContext等主要接口定义在[envoy/envoy/traci
 ##### Zipkin扩展实现
   zipkin作为开源的分布式追踪系统，兼容jaeger，应用广泛，envoy官方的example就以zipkin为例。因此，此处针对zipkin的实现进行分析。
 ##### Zipkin的注册与查找
+
 ![zipkin的注册与查找](/assets/img/envoy/tracing/zipkin-register-find.png)
 * [REGISTER_FACTORY](https://github.com/envoyproxy/envoy/blob/main/source/extensions/tracers/zipkin/config.cc)：envoy在main执行之前，zipkin通过该宏定义将自身注册到[全局map](https://github.com/envoyproxy/envoy/blob/main/envoy/registry/registry.h)中；
 * [getOrCreateHttpTracer](https://github.com/envoyproxy/envoy/blob/main/source/common/tracing/tracer_manager_impl.cc): envoy启动时，会读取yaml中，通过yaml中配置的名字找到能创建tracer的factory;
@@ -139,7 +153,9 @@ startSpan、finishSpan、injectContext等主要接口定义在[envoy/envoy/traci
 ```
 
 [http tracer](https://github.com/envoyproxy/envoy/blob/main/source/common/tracing/http_tracer_impl.cc)在startSpan时，实际上是调用的[zipkin的Driver](https://github.com/envoyproxy/envoy/blob/main/source/extensions/tracers/zipkin/zipkin_tracer_impl.h)实现的startSpan,该函数逻辑如下:
+
 ![zipkin driver startSpan](/assets/img/envoy/tracing/zipkin_startSpan.png)
+
 * [extractSpanContext](https://github.com/envoyproxy/envoy/blob/main/source/extensions/tracers/zipkin/span_context_extractor.h): 主要用于提取http头中的以下header:
   * x-b3-traceid: traceid
   * x-b3-spanid: spanid
@@ -155,9 +171,11 @@ startSpan、finishSpan、injectContext等主要接口定义在[envoy/envoy/traci
 
 zipkin实现的上报主要实现于[ReporterImpl::reportSpan](https://github.com/envoyproxy/envoy/blob/main/source/extensions/tracers/zipkin/zipkin_tracer_impl.cc)
 主要逻辑如下:
+
 ![zipkin_flush_span](/assets/img/envoy/tracing/zipkin_flush_span.png)
 
 最终，zipkin的总体过程可总结如下:
+
 ![zipkin总体过程](/assets/img/envoy/tracing/zipkin-sum.png)
 
 附：上报的span
