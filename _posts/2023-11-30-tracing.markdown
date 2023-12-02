@@ -224,4 +224,27 @@ func (i *IMPL) Hello(ctx context.Context) (int, string, error) {
 }
 ```
 
+## 网关中使用Opentelemetry
+
+作为一个完整流程，一个请求首先是从客户端/浏览器发到网关，然后网关将其转发到后端服务。因此，从后端的视角来看，一个
+请求链路的起始就是网关。因此很有比较在网关中对请求进行链路追踪，从而才能够发现该请求从哪里开始、分配到了哪个节点，最后又怎么结束。
+
+由于我使用的是apisix作为网关，因此首先应该在启动apisix之前使其支持opentelemetry插件：
+```
+...
+plugins:
+  - opentelemetry #开启opentelemetry插件
+
+plugin_attr:
+  opentelemetry: #为opentelemetry插件进行初始化设置
+    trace_id_source: x-request-id
+    resource:
+      service.name: APISIX
+    collector:
+      address: otel-collector:4318  # OTLP HTTP Receiver address
+      request_timeout: 3
+```
+如此，就完成了插件的配置，apisix中的请求也会自动上报到collector
+
+## 效果展示
 
