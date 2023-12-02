@@ -7,13 +7,18 @@ author: miracle
 mermaid: true
 ---
 
+## 背景
+
 ![threeIndicator](/assets/img/tracing/threeIndicate.png)
 
 随着微服务的兴起，项目开始从大型的单体结构逐步演变成职责分明的多个微服务结构。微服务之间相互调用，网络通信频繁，这使得排查一个问题变得越发困难。
 可观测系统是随之而来的一个产物，该系统可以监控整个微服务系统的各项业务、性能指标，对于一些异常情况可以快速告警；对于客户端发来的每一项请求，可以
 记录响应过程中经过了哪些服务，每个服务的耗时等等。
 
-可观测系统能让开发者从一个外部的、直观的视角看待微服务系统，从而更容易地掌控该系统。
+
+## 什么是链路追踪
+
+可观测系统能让开发者从一个外部的、直观的视角看待微服务系统，从而更容易地掌控分布式系统。
 
 可观测系统有三大指标需要搜集：
 
@@ -21,8 +26,202 @@ mermaid: true
 * metric：可以实时显示服务的业务和性能指标，比如CPU、内存利用率、QPS、Latency等等，让我们可以从一个直观的、可视化的角度查看系统的状态，甚至，通过与告警系统相结合，我们可以及时获知系统的异常情况
 * log: 系统日志、业务日志，记录服务的详细处理过程
 
-链路追踪简介
-链路追踪可以将一次分布式请求还原成调用链路进行展示，从展示的
-
+trace 也可以称作链路追踪，可以将一次分布式请求还原成调用链路进行展示，从该链路的可视化界面中，开发者可以直观的看到
+整个调用过程，从而快速定位。开发者还能直观的了解到整个过程中哪个部分最耗时，从而着重针对该高耗时的处理过程进行优化。
 
 ![tracingExample](/assets/img/tracing/tracingExample.png)
+
+## 怎么做链路追踪
+
+我在[Tracing Of Envoy](https://miracle-1991.github.io/posts/envoyTracing/)中曾经讲述过Envoy中是怎么实现Tracing的，当时选择了Jaeger接收
+上报的Span。由于当时做调研时Envoy支持的方式并不多，基本只有Zipkin比较成熟，免费，也兼容Jaeger，所以选择了使用Zipkin进行上报。
+
+但是在后端中，我们的选择更多一些,主要可以分为：
+* Zipkin SDK
+* Jaeger SDK
+* Skywalking
+* cat
+* pinpoint
+* lightstep
+* ......
+
+### 有没有统一的标准 ?
+#### 标准1: [Opentracing](https://opentracing.io/)
+众多的分布式追踪系统通过使用不兼容 API 的应用程序级检测进行实现，导致开发不通用。
+
+而OpenTracing是CNCF（Cloud Native Computing Foundation projects）的项目，
+它是一个与厂商无关的API，并提供了一种规范，可以帮助开发人员轻松的在他们的代码上集成tracing。
+
+官方提供了Go, JavaScript, Java, Python, Ruby, PHP, Objective-C, C++, C#等语言的支持。
+它是开发的不属于任何一家公司。
+
+事实上有很多公司正在支持OpenTracing，例如：Zipkin和Jaeger都遵循OpenTracing协议。
+
+![OpenTracing](/assets/img/tracing/openTracing.png)
+
+#### 标准2: [OpenCensus](https://opencensus.io/ OpenCensus)
+OpenCensus是Google开源的一套标准。
+作为最早提出Tracing概念的公司，OpenCensus也是Google Dapper的社区版本；
+OpenSensus是允许你采集应用程序Metrics和分布式Traces，并且支持各种语言的库 通过agent直接发送遥测数据到指定的exporter（jaeger、zipkin等）
+
+![OpenCensus](/assets/img/tracing/openCensus.png)
+
+#### 两个标准的区别与合并
+OpenCensus把Metrics包括进来了，不仅可以采集traces，还支持采集metrics，还有一点不同OpenCensus并不是单纯的规范制定，他还把包括数据采集的Agent、Collector
+
+![compare](/assets/img/tracing/compareOpenTracingAndOpenCensus.png)
+
+OpenCensus与OpenTracing为了将两者的优点进行整合，宣布将进行合并，两者的合并就是后来赫赫有名：OpenTelemetry
+
+![merge](/assets/img/tracing/mergeOpenTracingAndOpenCencus.png)
+
+###### OpenTelemetry
+OpenTelemetry与厂商、平台无关，不提供与可观测性相关的后端服务。 可根据用户需求将可观测类数据导出到存储、查询、可视化等不同后端，如 Prometheus、Jaeger 、云厂商服务中。
+
+OpenTelemetry不是像Jaeger、Skywalking、Prometheus这框架具备存储，查询，dashboard的服务。相反，它支持将数据导出到各种开源和商业后端。它提供了一个可插拔的体系结构，因此可以轻松添加附加的技术协议和格式。
+
+该项目得到了云提供商、厂商和最终用户的广泛行业支持和采用；
+
+OpenTelemetry与厂商支持11种主流语言（c++、.net、erlang、go、java、js、php、py、ruby、rust、swift）,
+其中[opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go)是go语言的opentelemetry实现，目前go的metrics到了贝塔版本，log还没有开发完成，不过trace是比较成熟的了
+
+
+![openTelemetry](/assets/img/tracing/openTelemetry.png)
+
+###### opentelemetry collector（简称otel collector）
+
+从上图中能看到，要想使用opentelemetry, 需要单独部署一个collector。
+
+该collector作为中间层，能接收telemetry数据，处理数据然后将数据发送出去。
+正常数据通过otel sdk到collector，经过collector处理后，再发送到下游。
+
+当然，也可以直接将数据发送下游而不经过collector，用collector的好处是可以进行数据加工，可以以sidecar的方式部署和业务容器一起部署，这样业务只需要把业务数据发送出去，而不用关心网络问题、发送失败重试等。
+
+## 服务中使用Opentelemetry
+
+由于我的服务是在docker-compose中部署的，因此，在服务启动之前，首先应该启动
+* Collector: 作为中间层，用于接收Opentelemetry SDK上报的数据，转发到Span接收者
+* Jaeger: 接收Span，并提供链路的展示
+
+因此首先启动collector和jaeger两个容器：
+```
+...
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./opentelemetry_conf/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - apisix
+    depends_on:
+      - jaeger
+      - prometheus
+    ports:
+      - "1888:1888"   #pprof expand
+      - "8888:8888"   #receive prometheus data
+      - "8889:8889"   #output prometheus data
+      - "13133:13133" #health check expand
+      - "4317:4317"   #OTLP grpc receiver
+      - "4318:4318"   #OTLP http receiver
+      - "55679:55679" #zpages extension
+      - "55680:55680" #OTLP protocol data
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    restart: always
+    ports:
+      - "16686:16686" # jaeger UI port
+      - "14268:14268" # receive data from OTEL Collector
+      - "14250:14250" # receive data from OTEL Collector
+    networks:
+      apisix:
+...
+```
+
+在启动时，collector需要提供相应的配置文件([config.yaml](https://github.com/miracle-1991/apiGateWay/blob/master/server/opentelemetry_conf/otel-collector-config.yaml))
+```
+receivers: #这部分配置了OpenTelemetry collector从哪些接收端收集数据。如：`otlp`（OpenTelemetry 标准的收集器）通过 gRPC 和 HTTP 获取数据。
+  otlp:
+    protocols:
+      grpc:
+      http:  #receive data from apisix or server, default port 4318
+
+processors: #配置了预处理这些收集到的数据的一系列流程。如：`batch` 这个处理器会将多个数据点打包到一个批次，然后再将批次作为一个整体进行处理。
+  batch:
+
+exporters: #配置了OpenTelemetry collector将处理后的数据输出到何处。如：`otlp`, `prometheus`, `debug`, 和 `logging`，他们分别会将数据发送到配置的 `endpoint` 。例如， `otlp` exporter 会将数据发送到 `jaeger:4317`。
+  otlp:
+    endpoint: jaeger:4317 # send data to jaeger or zipkin
+    tls:
+      insecure: true
+
+  debug:
+
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+  logging:
+    loglevel: debug
+
+extensions: #扩展为 collector 提供一些额外的功能，例如：运行状况检查 (`health_check`)，性能剖析 (`pprof`)，页面状态检查 (`zpages`)。
+  health_check:
+  pprof:
+    endpoint: :1888
+  zpages:
+    endpoint: :55679
+
+service:
+  extensions: [pprof, zpages, health_check]
+  pipelines: # 配置了 collector 启动时应激活哪些扩展和管道。管道（pipelines）由一个或多个收集器、处理器和输出器组成，数据通过管道从接收到输出。
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug,otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug,prometheus]
+```
+
+然后在服务启动之前先进行注册([Register](https://github.com/miracle-1991/apiGateWay/blob/master/server/echo/observable/trace/trace.go)),在注册的过程中设置好
+collector的地址、采样频率：
+```
+...
+ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx,
+	  config.OTEL_ADDR, //Collector的地址
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create gRPC connection to collector: %w", err)
+	}
+
+	// Set up a trace exporter
+	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	if err != nil {
+		return fmt.Errorf("failed to create trace exporter: %w", err)
+	}
+
+	// Register the trace exporter with a TracerProvider, using a batch
+	// span processor to aggregate spans before export.
+	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),  //全采样
+		sdktrace.WithResource(res),
+		sdktrace.WithSpanProcessor(bsp),
+	)
+...
+```
+然后就可以很方便的使用Tracing:
+```
+func (i *IMPL) Hello(ctx context.Context) (int, string, error) {
+	ctx, span := trace.Tracer.Start(ctx, "hello") //生成新Span,或者继承父Span生成子Span
+	defer span.End()  //上报Span
+
+	return config.OK, "hello world", nil
+}
+```
+
+
