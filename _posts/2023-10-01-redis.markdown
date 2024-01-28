@@ -1,6 +1,6 @@
 ---
 title: REDIS
-date: 2023-10-30 14:59:00 +0800
+date: 2023-10-01 14:59:00 +0800
 categories: [backend]
 tags: [redis]
 author: miracle
