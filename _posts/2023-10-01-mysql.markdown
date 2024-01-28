@@ -1,0 +1,11 @@
+---
+title: MYSQL
+date: 2023-10-01 14:59:00 +0800
+categories: [backend]
+tags: [mysql]
+author: miracle
+mermaid: true
+---
+![query](/assets/img/mysql/mysql-query.drawio.png)
+![binlog](/assets/img/mysql/mysql-binlog.drawio.png)
+![join](/assets/img/mysql/mysql-join.drawio.png)
