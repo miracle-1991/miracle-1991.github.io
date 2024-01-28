@@ -1,0 +1,9 @@
+---
+title: KAFKA
+date: 2023-10-30 14:59:00 +0800
+categories: [backend]
+tags: [kafka]
+author: miracle
+mermaid: true
+---
+![kafka](/assets/img/kafka/kafka.drawio.png)
