@@ -1,0 +1,166 @@
+---
+title: 大数据分析与处理
+date: 2023-10-02 08:00:00 +0800
+categories: [backend]
+tags: [DB, OLAP]
+author: miracle
+mermaid: true
+---
+
+### ClickHouse：
+https://clickhouse.com/docs/zh
+
+ClickHouse 是一种用于在线（OLAP）分析的列式数据库管理系统（DBMS）。不同于 Hive，它不是基于 Hadoop 的。ClickHouse 的主要目标是允许使用 SQL 查询实时生成分析数据报告。
+
+**ClickHouse 的主要特点包括：**
+
+1. 高速查询：ClickHouse 的查询速度大部分情况下要快于 Hive，对于包含联接和子查询的复杂查询也能提供良好的性能。
+2. 实时性：不同于 Hive 更适合批处理，ClickHouse 主要针对的是在线分析处理 （OLAP）场景，可以提供近乎实时的查询结果。
+3. 压缩：ClickHouse 列式存储的特性意味着它可以非常有效地压缩数据，降低磁盘空间的使用。
+4. 可扩展性：ClickHouse 具有分布式处理能力，可以水平扩展和支持复制。
+
+***缺点***
+
+1. 不支持完整的事务。
+2. 缺乏以高速率和低延迟修改或删除已插入的数据的能力。支持批量删除和更新可用于清理或修改数据，例如，遵守GDPR。
+3. 稀疏索引使ClickHouse对通过 key 检索单行的点查询不那么有效。
+
+### Hive：
+
+Apache Hive 是基于 Hadoop 的一个数据仓库工具，可以将结构化数据文件映射为一张数据库表，并提供 SQL 查询功能。它被设计用来使得具备 SQL 知识的用户能在 Hadoop 上运行 MapReduce 任务。
+
+**Hive 的主要特点包括：**
+
+1. 支持 SQL：让使用者利用 Hive 提供的 SQL 接口去查询数据，实现了大数据和 sql 的双重分析能力。
+2. 扩展性：支持用户自定义函数以提供处理复杂数据分析的功能。
+3. 兼容性：兼容现有的 Hadoop 数据，包括自定义输入/输出格式。
+4. 支持多种存储类型：包括纯文本，RCFile，HBase，ORC 等。
+
+Hive 更适合于存储大量数据并进行批量处理，而 ClickHouse 则更适合于需要实时分析的场景。
+
+### Spark
+Apache Spark 是一个开源的大数据处理框架，它可以在集群上进行分布式计算。Spark 旨在实现快速计算，包括批量数据、交互式查询和流处理等多种应用，具有易用性、速度快、通用性等优点。
+
+以下是 Spark 的主要特点和组件：
+
+1. **速度**：Spark 借助内存计算（In-Memory Computation）提升了 MapReduce 的执行速度，能实现比Hadoop MapReduce更高的计算速度。
+
+2. **易用性**：提供了 Java、Scala、Python 和 R 语言的编程接口（API），并支持 SQL 查询、流数据处理和机器学习。
+
+3. **通用性**：Spark 集成了各种大数据工具，可用于处理批量数据、交互查询、实时处理和复杂的分析任务。
+
+   - **Spark SQL**：它支持 SQL 和结构数据处理。Spark SQL 允许用户使用 SQL 查询语句进行数据查询，同时还可以使用 Dataset 和 DataFrame API 进行数据处理。
+
+   - **Spark Streaming**：它支持实时数据流处理。可以使用 Spark Streaming 处理实时数据，比如日志文件生成、社交网络数据、机器传感器数据等。
+
+   - **MLlib**：Spark 基于内存的架构使其成为处理机器学习算法的一个好的平台，MLlib 就是 Spark 提供的一个机器学习库，其中包含了常见的机器学习算法和工具。
+
+   - **GraphX**：GraphX 是 Spark 中用来进行图计算的 API，在一些需要用到图计算的场景中， GraphX 提供了一种简单易用的解决方案。
+
+4. **容错性**：Spark 通过弹性分布式数据集（RDD, Resilient Distributed Dataset）来保证容错性。RDD 是一个分布式的数据集合，可以进行并行操作，是 Spark 中最基本的数据结构。
+
+总的来说，Spark 是一个功能强大且高效的大数据处理和计算平台。
+
+### Spark SQL
+
+Spark SQL 是 Apache Spark 的一个模块，提供了一个编程接口，支持数据处理和丰富的数据源，还提供了SQL查询的能力。
+
+对 Hive 的支持： Spark SQL 提供了对 Hive 的全面支持。利用这一特性，可以直接在 Spark 中运行 Hive SQL 查询、Hive UDFs，甚至可以联接 Hive tables 和 Spark 的数据集。Spark SQL 还支持 Hive 的 metastore，能让用户完整复用现有 Hive 的数据仓库，包括 Hive 中的表、视图以及 UDF。
+
+对 ClickHouse 的支持： 对于 ClickHouse，Spark SQL 并没有自带的内建连接器，但有不少开源项目或者第三方工具提供了 Spark 和 ClickHouse 的接入桥梁。如使用开源项目 Clickhouse-Spark-Connector，可以实现通过 Spark SQL 查询 ClickHouse 的表。这通常需在 Spark 中添加相关的依赖并创建 ClickHouse 连接。
+
+### Spark DataFrame
+DataFrame（数据帧）是一种二维数据结构，可以将其视为一个表格，由行和列组成。在许多编程语言（例如 Python、R、Scala 和 Java）的数据处理和分析库（如 pandas、Spark）中，它都是一个非常重要的数据结构。
+
+**DataFrame 的主要特点和优点包括：**
+
+1. **异构数据类型**：DataFrame 可以包含各种数据类型（包括整数、浮点数、字符串和布尔值等）的数据。每一列可以是不同的数据类型，类似于SQL的表结构。
+
+2. **大小可变**：插入或删除行、列可以改变 DataFrame 的大小。
+
+3. **数据可变**：DataFrame 中的数据可以是可变的，用户可以对已有的 DataFrame 进行修改。
+
+4. **数据标签**：DataFrame 的每一行和列都可以有标签。例如，列标签可以是各个字段的名称，行标签则可以是每个数据条目的标识符。
+
+5. **处理能力**：DataFrame 提供了大量的内置方法供用户操作数据，如分组（groupby）、连接（_join）、合并（merge）、排序（sort）等。DataFrame也常用于处理缺失数据、数据转换等工作，非常适用于数据清洗和准备。
+
+### Flink
+
+**Apache Flink** 是一个高性能、可扩展且精确的大规模数据流处理框架。它支持时间语义，事件时间（event-time）处理，以及卓越的容错能力。可以使用 Flink 进行大规模的批处理和高吞吐量的流处理。
+
+Flink 除了核心数据流引擎之外，还提供了额外的库，用于处理复杂事件处理（CEP）、机器学习、图分析以及 SQL 查询等。
+
+**Flink Stateful Functions**，也称为 StateFun，是 Flink 家族的成员，它提供分布式、强大的状态处理功能，并且以无服务的方式运行。 StateFun 是一个模块化、可伸缩、可恢复，有且仅有函数状态可用的 分布式 Stateful Functions 的编程模型。它采用了函数式编程模型，每一个函数都有其独立的状态，使数据的更新、查询变得直观。
+
+要开发一个 Stateful Functions 应用，需要定义函数说明如何响应不同种类的输入。一个函数需要定义一个类型和标识符，并且它们的组合在 Stateful Functions 应用中应该是唯一的。
+
+以下是一个使用 Python 编写的 Stateful Functions 的例子：
+
+```python
+from statefun import StatefulFunctions
+
+functions = StatefulFunctions()
+
+@functions.bind("example/counter")
+def counter(context, message: str):
+    state_key = "counter"
+    current_counter = context.state(state_key).unpack(int)
+    if current_counter is None:
+        current_counter = 0
+    current_counter += 1
+    context.state(state_key).pack(current_counter)
+    message.reply(str(current_counter))
+```
+
+上述代码先定义了一个函数（函数类型是 "example/counter"）。此函数获取当前状态（名为 "counter"），然后更新该状态并回复更新后的值。
+
+要部署这个 Stateful Functions 的应用，还需要设置对应的后端服务，接入不同的系统，如 Apache Kafka 或 AWS Kinesis 等。还需要设置 StateFun SDK 和 StateFun 应用主机的关系，以及如何路由传入的消息。
+
+![flink-statefun](/assets/img/flink/flink-简介.drawio.png)
+
+在 Stateful Functions（StateFun）中，每个函数实例都有一个以函数类型和标识符标识的、持久化的、本地的和容错的状态。当在函数中调用 context.state(state_key) 时，实际上是在访问这个本地状态。
+
+具体来说，.pack(current_counter) 是把 current_counter 这个 Python 对象序列化并保存到状态后端中。序列化是由 StateFun SDK 自动处理的，不需要关心具体的序列化和反序列化过程。
+
+至于「状态后端」保存在哪，这取决于 StateFun 应用部署时的配置。默认情况下，状态保存在所使用的 Flink 集群的 TaskManager 的内存中。
+然而，也可以配置使用 Flink 提供的其他状态后端，比如 RocksDB、文件系统或自定义的状态后端。对于这些建议的状态后端，StateFun 利用 Flink 的 checkpoint 机制，定期将状态快照保存到一个持久化存储中（如分布式文件系统），以此来保证端对端的 Exactly-Once 语义。如果 TaskManager 失败，状态可以从最近的 checkpoint 中恢复，从而确保状态的持久化和容错。
+
+Apache Flink 的状态快照（Snapshot）机制，也称为 Checkpointing，这是 Flink 提供强大的恢复机制和保证 exactly-once 语义的重要基础。
+
+**State SnapShot**
+
+![snapshot](/assets/img/flink/flink-snapshot.drawio.png)
+
+1. Flink job 运行过程中，按照预定间隔时间，JobManager（Flink 集群中的主节点）会向所有的 TaskManager（负责执行任务的工作节点）发起 checkpoint 请求。
+
+2. 当 TaskManager 收到 checkpoint 请求，会首先记录当前正在处理的数据记录的位置，也就是 checkpoint 的位置。
+
+3. 然后 TaskManager 将从内存中把状态数据写入到配置的持久化存储中（如：HDFS、S3等分布式文件系统），这个过程被称为 "state snapshot"（即状态快照）。
+
+4. 当所有的 TaskManager 都反馈已完成状态快照，并且没有任何错误时，JobManager 就会把这个 checkpoint 标记为 "已完成"。
+
+如果在处理数据过程中发生故障，Flink 可以重新启动 job，并从最近的 checkpoint 恢复数据和状态，继续任务的执行。恢复时，系统会将数据恢复至最近完成的 checkpoint，任务将从 checkpoint 位置开始重新读取记录并处理，这样就能够避免数据处理的重复或丢失。
+
+除此之外，Flink 的 checkpoint 还支持端到端的 exactly-once 语义。这是因为 Flink 在做 checkpoint 时，不仅会对内部状态做快照，还会负责将外部系统（如 Kafka）的偏移量也一并保存在快照中，保证整个 pipeline 的恢复和一致性。
+
+所以，Flink 的快照机制是 Flink 保证大规模数据流处理的容错性、一致性和精确性的关键所在。
+
+Apache Flink 和 Apache Spark 都是大数据处理框架，它们都可以处理批处理和流处理任务，而且都支持在分布式环境中运行。然而，他们在数据处理模型、编程模式、延迟、吞吐量等方面有所不同。
+
+### Flink与Spark的区别
+
+**数据处理模型：**
+- **Spark**：Spark 把批处理作为基础，其流处理也是基于微批处理模型（Spark Streaming）。在这种模型中，流数据被切分为一系列批次，每个批次独立处理。
+- **Flink**：Flink 从底层就支持真正的流处理，它将批处理看作流处理的一种特例。Flink 的流处理能够保证事件时间处理和低延迟。
+
+**编程模式：**
+- **Spark**：Spark 提供了弹性分布式数据集（RDD）作为最基本的编程模型，并且提供了更高级别的编程接口如 DataFrame 和 Dataset。
+- **Flink**：Flink 提供了DataStream（流数据）和 DataSet（批数据）两种编程模型，并且在流处理中提供了窗口操作、事件时间处理等功能。
+
+**延迟：**
+- **Spark**：由于微批处理模型的限制，Spark Streaming 的延迟通常在数秒到数分钟之间。
+- **Flink**：Flink 能够提供毫秒级别的延迟，这使得 Flink 非常适合需要低延迟的实时应用。
+
+**吞吐量：**
+- **Spark**：Spark 的吞吐量非常高，尤其擅长大规模的数据批处理任务。
+- **Flink**：虽然 Flink 的吞吐量相对较低，但是它在流处理场景中提供了事件时间处理和精确一次处理语义。
