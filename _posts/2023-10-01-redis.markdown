@@ -1,0 +1,11 @@
+---
+title: REDIS
+date: 2023-10-01 14:59:00 +0800
+categories: [backend]
+tags: [redis]
+author: miracle
+mermaid: true
+---
+![redis-rdb](/assets/img/redis/redis-持久化.drawio.png)
+![redis-sync](/assets/img/redis/redis-主从同步.drawio.png)
+![redis-sentinel](/assets/img/redis/redis-哨兵模式.drawio.png)
